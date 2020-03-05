@@ -1,13 +1,30 @@
-#!/usr/bin/env groovy
-// Some fast steps to inspect the build server. Create a pipeline script job and add this:
-
 node {
-   DOCKER_PATH = sh (script: 'command -v docker', returnStdout: true).trim()
-   echo "Docker path: ${DOCKER_PATH}"
-   
-   FREE_MEM = sh (script: 'free -m', returnStdout: true).trim()
-   echo "Free memory: ${FREE_MEM}"
-   
-   echo sh(script: 'env|sort', returnStdout: true)
+ 	// Clean workspace before doing anything
+    deleteDir()
 
+    try {
+        stage ('Clone') {
+        	checkout scm
+        }
+        stage ('Build') {
+        	sh "echo 'shell scripts to build project...'"
+        }
+        stage ('Tests') {
+	        parallel 'static': {
+	            sh "echo 'shell scripts to run static tests...'"
+	        },
+	        'unit': {
+	            sh "echo 'shell scripts to run unit tests...'"
+	        },
+	        'integration': {
+	            sh "echo 'shell scripts to run integration tests...'"
+	        }
+        }
+      	stage ('Deploy') {
+            sh "echo 'shell scripts to deploy to server...'"
+      	}
+    } catch (err) {
+        currentBuild.result = 'FAILED'
+        throw err
+    }
 }
